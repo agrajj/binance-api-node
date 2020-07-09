@@ -273,6 +273,8 @@ declare module 'binance-api-node' {
       useServerTime?: boolean
     }): Promise<QueryOrderResult>
     futuresPositionRisk(options?: { recvWindow: number }): Promise<PositionRiskResult[]>
+    loan(options: { asset: string; amount: number }): Promise<LoanResult>
+    repay(options: { asset: string; amount: number }): Promise<RepayResult>
   }
 
   export interface HttpError extends Error {
@@ -280,7 +282,11 @@ declare module 'binance-api-node' {
     url: string
   }
 
-  export type UserDataStreamEvent = OutboundAccountInfo | ExecutionReport | BalanceUpdate | OutboundAccountPosition
+  export type UserDataStreamEvent =
+    | OutboundAccountInfo
+    | ExecutionReport
+    | BalanceUpdate
+    | OutboundAccountPosition
 
   export interface WebSocket {
     depth: (
@@ -294,6 +300,14 @@ declare module 'binance-api-node' {
     ticker: (
       pair: string | string[],
       callback: (ticker: Ticker) => void,
+    ) => ReconnectingWebSocketHandler
+    tickerFutures: (
+      pair: string | string[],
+      callback: (ticker: Ticker) => void,
+    ) => ReconnectingWebSocketHandler
+    tickerFuturesMarkPrice: (
+      pair: string | string[],
+      callback: (markPrice: FuturesMarkPrice) => void,
     ) => ReconnectingWebSocketHandler
     allTickers: (callback: (tickers: Ticker[]) => void) => ReconnectingWebSocketHandler
     candles: (
@@ -482,6 +496,13 @@ declare module 'binance-api-node' {
     commissionAsset: string
   }
 
+  export interface LoanResult {
+    tranId: string
+  }
+  export interface RepayResult {
+    tranId: string
+  }
+
   export interface Order {
     clientOrderId: string
     cummulativeQuoteQty: string
@@ -584,6 +605,11 @@ declare module 'binance-api-node' {
   export interface Bid {
     price: string
     quantity: string
+  }
+
+  export interface FuturesMarkPrice {
+    price: number
+    symbol: string
   }
 
   export interface Ticker {

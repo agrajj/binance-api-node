@@ -1,6 +1,5 @@
-import zip from 'lodash.zipobject'
-
 import httpMethods from 'http-client'
+import zip from 'lodash.zipobject'
 import openWebSocket from 'open-websocket'
 
 const BASE = 'wss://stream.binance.com:9443/ws'
@@ -115,6 +114,15 @@ const candles = (payload, interval, cb) => {
     cache.forEach(w => w.close(1000, 'Close handle was called', { keepClosed: true, ...options }))
 }
 
+const markPriceTransform = m => ({
+  eventType: m.e,
+  eventTime: m.E,
+  symbol: m.s,
+  price: m.p,
+  fundingRate: m.r,
+  nextFundingTime: m.T,
+})
+
 const tickerTransform = m => ({
   eventType: m.e,
   eventTime: m.E,
@@ -147,6 +155,36 @@ const ticker = (payload, cb) => {
 
     w.onmessage = msg => {
       cb(tickerTransform(JSON.parse(msg.data)))
+    }
+
+    return w
+  })
+
+  return options =>
+    cache.forEach(w => w.close(1000, 'Close handle was called', { keepClosed: true, ...options }))
+}
+
+const tickerFutures = (payload, cb) => {
+  const cache = (Array.isArray(payload) ? payload : [payload]).map(symbol => {
+    const w = openWebSocket(`${FUTURES}/${symbol.toLowerCase()}@ticker`)
+
+    w.onmessage = msg => {
+      cb(tickerTransform(JSON.parse(msg.data)))
+    }
+
+    return w
+  })
+
+  return options =>
+    cache.forEach(w => w.close(1000, 'Close handle was called', { keepClosed: true, ...options }))
+}
+
+const tickerFuturesMarkPrice = (payload, cb) => {
+  const cache = (Array.isArray(payload) ? payload : [payload]).map(symbol => {
+    const w = openWebSocket(`${FUTURES}/${symbol.toLowerCase()}@markPrice@1s`)
+
+    w.onmessage = msg => {
+      cb(markPriceTransform(JSON.parse(msg.data)))
     }
 
     return w
@@ -252,6 +290,12 @@ const aggTrades = (payload, cb) => aggTradesInternal(payload, cb)
 const trades = (payload, cb) => tradesInternal(payload, cb)
 
 const userTransforms = {
+  ACCOUNT_UPDATE: m => ({
+    asset: m.a,
+    clearTime: m.T,
+    eventTime: m.E,
+    eventType: 'ACCOUNT_UPDATE',
+  }),
   // https://github.com/binance-exchange/binance-official-api-docs/blob/master/user-data-stream.md#balance-update
   balanceUpdate: m => ({
     asset: m.a,
@@ -279,7 +323,7 @@ const userTransforms = {
   }),
   // https://github.com/binance-exchange/binance-official-api-docs/blob/master/user-data-stream.md#account-update
   outboundAccountPosition: m => ({
-    balances: m.B.map(({a, f, l}) => ({asset: a, free: f, locked: l})),
+    balances: m.B.map(({ a, f, l }) => ({ asset: a, free: f, locked: l })),
     eventTime: m.E,
     eventType: 'outboundAccountPosition',
     lastAccountUpdate: m.u,
@@ -316,6 +360,39 @@ const userTransforms = {
     orderListId: m.g,
     quoteOrderQuantity: m.Q,
     lastQuoteTransacted: m.Y,
+  }),
+
+  ORDER_TRADE_UPDATE: m => ({
+    eventType: 'ORDER_TRADE_UPDATE',
+    eventTime: m.E,
+    symbol: m.o.s,
+    newClientOrderId: m.o.c,
+    originalClientOrderId: m.o.C,
+    side: m.o.S,
+    orderType: m.o.o,
+    timeInForce: m.o.f,
+    quantity: m.o.q,
+    price: m.o.p,
+    executionType: m.o.x,
+    stopPrice: m.o.P,
+    icebergQuantity: m.o.F,
+    orderStatus: m.o.X,
+    orderRejectReason: m.o.r,
+    orderId: m.o.i,
+    orderTime: m.o.T,
+    lastTradeQuantity: m.o.l,
+    totalTradeQuantity: m.o.z,
+    priceLastTrade: m.o.L,
+    commission: m.o.n,
+    commissionAsset: m.o.N,
+    tradeId: m.o.t,
+    isOrderWorking: m.o.w,
+    isBuyerMaker: m.o.m,
+    creationTime: m.o.O,
+    totalQuoteTradeQuantity: m.o.Z,
+    orderListId: m.o.g,
+    quoteOrderQuantity: m.o.Q,
+    lastQuoteTransacted: m.o.Y,
   }),
 }
 
@@ -408,6 +485,8 @@ export default opts => ({
   trades,
   aggTrades,
   ticker,
+  tickerFutures,
+  tickerFuturesMarkPrice,
   allTickers,
   user: user(opts),
   marginUser: user(opts, 'margin'),
