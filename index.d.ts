@@ -297,6 +297,10 @@ declare module 'binance-api-node' {
       options: { symbol: string; level: number } | { symbol: string; level: number }[],
       callback: (depth: PartialDepth) => void,
     ) => ReconnectingWebSocketHandler
+    bookTickerFutures: (
+      pair: string | string[],
+      callback: (ticker: BookTicker) => void,
+    ) => ReconnectingWebSocketHandler
     ticker: (
       pair: string | string[],
       callback: (ticker: Ticker) => void,
@@ -562,7 +566,7 @@ declare module 'binance-api-node' {
 
   export type NewOrderRespType = 'ACK' | 'RESULT' | 'FULL'
 
-  export type TimeInForce = 'GTC' | 'IOC' | 'FOK'
+  export type TimeInForce = 'GTC' | 'IOC' | 'FOK' | 'GTX'
 
   export enum OrderRejectReason {
     ACCOUNT_CANNOT_SETTLE = 'ACCOUNT_CANNOT_SETTLE',
@@ -610,6 +614,14 @@ declare module 'binance-api-node' {
   export interface FuturesMarkPrice {
     price: number
     symbol: string
+  }
+
+  export interface BookTicker {
+    symbol: string
+    bestBidPrice: string
+    bestBidQuantity: string
+    bestAskPrice: string
+    bestAskQuantity: string
   }
 
   export interface Ticker {

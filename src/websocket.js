@@ -149,12 +149,35 @@ const tickerTransform = m => ({
   totalTrades: m.n,
 })
 
+const bookTickerTransform = m => ({
+  symbol: m.s,
+  bestBidPrice: parseFloat(m.b),
+  bestBidQuantity: parseFloat(m.B),
+  bestAskPrice: parseFloat(m.a),
+  bestAskQuantity: parseFloat(m.A),
+})
+
 const ticker = (payload, cb) => {
   const cache = (Array.isArray(payload) ? payload : [payload]).map(symbol => {
     const w = openWebSocket(`${BASE}/${symbol.toLowerCase()}@ticker`)
 
     w.onmessage = msg => {
       cb(tickerTransform(JSON.parse(msg.data)))
+    }
+
+    return w
+  })
+
+  return options =>
+    cache.forEach(w => w.close(1000, 'Close handle was called', { keepClosed: true, ...options }))
+}
+
+const bookTickerFutures = (payload, cb) => {
+  const cache = (Array.isArray(payload) ? payload : [payload]).map(symbol => {
+    const w = openWebSocket(`${FUTURES}/${symbol.toLowerCase()}@bookTicker`)
+
+    w.onmessage = msg => {
+      cb(bookTickerTransform(JSON.parse(msg.data)))
     }
 
     return w
@@ -484,8 +507,10 @@ export default opts => ({
   candles,
   trades,
   aggTrades,
+  bookTickerFutures,
   ticker,
   tickerFutures,
+
   tickerFuturesMarkPrice,
   allTickers,
   user: user(opts),
