@@ -113,6 +113,61 @@ const candles = (payload, interval, cb) => {
   return options =>
     cache.forEach(w => w.close(1000, 'Close handle was called', { keepClosed: true, ...options }))
 }
+const candlesFutures = (payload, interval, cb) => {
+  if (!interval || !cb) {
+    throw new Error('Please pass a symbol, interval and callback.')
+  }
+
+  const cache = (Array.isArray(payload) ? payload : [payload]).map(symbol => {
+    const w = openWebSocket(`${FUTURES}/${symbol.toLowerCase()}@kline_${interval}`)
+    w.onmessage = msg => {
+      const { e: eventType, E: eventTime, s: symbol, k: tick } = JSON.parse(msg.data)
+      const {
+        t: startTime,
+        T: closeTime,
+        f: firstTradeId,
+        L: lastTradeId,
+        o: open,
+        h: high,
+        l: low,
+        c: close,
+        v: volume,
+        n: trades,
+        i: interval,
+        x: isFinal,
+        q: quoteVolume,
+        V: buyVolume,
+        Q: quoteBuyVolume,
+      } = tick
+
+      cb({
+        eventType,
+        eventTime,
+        symbol,
+        startTime,
+        closeTime,
+        firstTradeId,
+        lastTradeId,
+        open,
+        high,
+        low,
+        close,
+        volume,
+        trades,
+        interval,
+        isFinal,
+        quoteVolume,
+        buyVolume,
+        quoteBuyVolume,
+      })
+    }
+
+    return w
+  })
+
+  return options =>
+    cache.forEach(w => w.close(1000, 'Close handle was called', { keepClosed: true, ...options }))
+}
 
 const markPriceTransform = m => ({
   eventType: m.e,
@@ -505,6 +560,7 @@ export default opts => ({
   depth,
   partialDepth,
   candles,
+  candlesFutures,
   trades,
   aggTrades,
   bookTickerFutures,
