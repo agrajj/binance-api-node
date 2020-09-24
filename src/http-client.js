@@ -1,7 +1,6 @@
 import crypto from 'crypto'
-import zip from 'lodash.zipobject'
-
 import 'isomorphic-fetch'
+import zip from 'lodash.zipobject'
 
 const BASE = 'https://api.binance.com'
 const FUTURES = 'https://fapi.binance.com'
@@ -326,6 +325,8 @@ export default opts => {
     marginOpenOrders: payload => privCall('/sapi/v1/margin/openOrders', payload),
     marginAccountInfo: payload => privCall('/sapi/v1/margin/account', payload),
     marginMyTrades: payload => privCall('/sapi/v1/margin/myTrades', payload),
+    loan: payload => privCall('/sapi/v1/margin/loan', payload, 'POST'),
+    repay: payload => privCall('/sapi/v1/margin/repay', payload, 'POST'),
 
     futuresPing: () => pubCall('/fapi/v1/ping').then(() => true),
     futuresTime: () => pubCall('/fapi/v1/time').then(r => r.serverTime),
@@ -352,6 +353,6 @@ export default opts => {
     futuresOrder: payload => order(privCall, payload, '/fapi/v1/order'),
     futuresCancelOrder: payload => privCall('/fapi/v1/order', payload, 'DELETE'),
     futuresOpenOrders: payload => privCall('/fapi/v1/openOrders', payload),
-    futuresPositionRisk: payload => privCall('/fapi/v1/positionRisk', payload),
+    futuresPositionRisk: payload => privCall('/fapi/v2/positionRisk', payload),
   }
 }

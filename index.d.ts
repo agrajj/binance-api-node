@@ -273,6 +273,8 @@ declare module 'binance-api-node' {
       useServerTime?: boolean
     }): Promise<QueryOrderResult>
     futuresPositionRisk(options?: { recvWindow: number }): Promise<PositionRiskResult[]>
+    loan(options: { asset: string; amount: number }): Promise<LoanResult>
+    repay(options: { asset: string; amount: number }): Promise<RepayResult>
   }
 
   export interface HttpError extends Error {
@@ -280,7 +282,11 @@ declare module 'binance-api-node' {
     url: string
   }
 
-  export type UserDataStreamEvent = OutboundAccountInfo | ExecutionReport | BalanceUpdate | OutboundAccountPosition
+  export type UserDataStreamEvent =
+    | OutboundAccountInfo
+    | ExecutionReport
+    | BalanceUpdate
+    | OutboundAccountPosition
 
   export interface WebSocket {
     depth: (
@@ -291,12 +297,29 @@ declare module 'binance-api-node' {
       options: { symbol: string; level: number } | { symbol: string; level: number }[],
       callback: (depth: PartialDepth) => void,
     ) => ReconnectingWebSocketHandler
+    bookTickerFutures: (
+      pair: string | string[],
+      callback: (ticker: BookTicker) => void,
+    ) => ReconnectingWebSocketHandler
     ticker: (
       pair: string | string[],
       callback: (ticker: Ticker) => void,
     ) => ReconnectingWebSocketHandler
+    tickerFutures: (
+      pair: string | string[],
+      callback: (ticker: Ticker) => void,
+    ) => ReconnectingWebSocketHandler
+    tickerFuturesMarkPrice: (
+      pair: string | string[],
+      callback: (markPrice: FuturesMarkPrice) => void,
+    ) => ReconnectingWebSocketHandler
     allTickers: (callback: (tickers: Ticker[]) => void) => ReconnectingWebSocketHandler
     candles: (
+      pair: string | string[],
+      period: string,
+      callback: (ticker: Candle) => void,
+    ) => ReconnectingWebSocketHandler
+    candlesFutures: (
       pair: string | string[],
       period: string,
       callback: (ticker: Candle) => void,
@@ -482,6 +505,13 @@ declare module 'binance-api-node' {
     commissionAsset: string
   }
 
+  export interface LoanResult {
+    tranId: string
+  }
+  export interface RepayResult {
+    tranId: string
+  }
+
   export interface Order {
     clientOrderId: string
     cummulativeQuoteQty: string
@@ -541,7 +571,7 @@ declare module 'binance-api-node' {
 
   export type NewOrderRespType = 'ACK' | 'RESULT' | 'FULL'
 
-  export type TimeInForce = 'GTC' | 'IOC' | 'FOK'
+  export type TimeInForce = 'GTC' | 'IOC' | 'FOK' | 'GTX'
 
   export enum OrderRejectReason {
     ACCOUNT_CANNOT_SETTLE = 'ACCOUNT_CANNOT_SETTLE',
@@ -584,6 +614,19 @@ declare module 'binance-api-node' {
   export interface Bid {
     price: string
     quantity: string
+  }
+
+  export interface FuturesMarkPrice {
+    price: number
+    symbol: string
+  }
+
+  export interface BookTicker {
+    symbol: string
+    bestBidPrice: string
+    bestBidQuantity: string
+    bestAskPrice: string
+    bestAskQuantity: string
   }
 
   export interface Ticker {
