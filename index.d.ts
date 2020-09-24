@@ -154,6 +154,8 @@ declare module 'binance-api-node' {
     }
   }
 
+  export type GetOrderOptions = {symbol: string, orderId: number} | {symbol: string, origClientOrderId: string}
+
   export interface Binance {
     accountInfo(options?: { useServerTime: boolean }): Promise<Account>
     tradeFee(): Promise<TradeFeeResult>
@@ -171,7 +173,9 @@ declare module 'binance-api-node' {
     orderTest(options: NewOrder): Promise<Order>
     orderOco(options: NewOcoOrder): Promise<OcoOrder>
     ping(): Promise<boolean>
-    prices(): Promise<{ [index: string]: string }>
+    prices(options?: {
+      symbol?: string
+    }): Promise<{ [index: string]: string }>
     avgPrice(options?: { symbol: string }): Promise<AvgPriceResult | AvgPriceResult[]>
     time(): Promise<number>
     trades(options: { symbol: string; limit?: number }): Promise<TradeResult[]>
@@ -182,11 +186,7 @@ declare module 'binance-api-node' {
       fromId?: number
       useServerTime?: boolean
     }): Promise<MyTrade[]>
-    getOrder(options: {
-      symbol: string
-      orderId: number
-      useServerTime?: boolean
-    }): Promise<QueryOrderResult>
+    getOrder(options: GetOrderOptions & {useServerTime?: boolean}): Promise<QueryOrderResult>
     cancelOrder(options: {
       symbol: string
       orderId: number
@@ -788,7 +788,9 @@ declare module 'binance-api-node' {
     icebergQty: string
     isWorking: boolean
     orderId: number
+    orderListId: number
     origQty: string
+    origQuoteOrderQty: string
     price: string
     side: OrderSide
     status: OrderStatus
